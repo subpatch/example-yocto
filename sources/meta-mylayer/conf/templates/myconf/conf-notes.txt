@@ -1,0 +1,3 @@
+This build configuration is in meta-mylayer. Now build with
+
+    $ bitbake my-image
