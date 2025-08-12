@@ -10,4 +10,5 @@ and then resetup.
 
 ## TODOs
 
-Add your own small distro
+Add a own small distro based on systemd and then add small python based
+services. It's a better embedded example than just a program.
