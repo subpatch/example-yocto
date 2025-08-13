@@ -240,14 +240,16 @@ class ExportFuncsNode(AstNode):
                 data.setVar(func, sentinel + "    " + calledfunc + "\n", parsing=True)
 
 class AddTaskNode(AstNode):
-    def __init__(self, filename, lineno, func, before, after):
+    def __init__(self, filename, lineno, tasks, before, after):
         AstNode.__init__(self, filename, lineno)
-        self.func = func
+        self.tasks = tasks
         self.before = before
         self.after = after
 
     def eval(self, data):
-        bb.build.addtask(self.func, self.before, self.after, data)
+        tasks = self.tasks.split()
+        for task in tasks:
+            bb.build.addtask(task, self.before, self.after, data)
 
 class DelTaskNode(AstNode):
     def __init__(self, filename, lineno, tasks):
@@ -348,21 +350,11 @@ def handlePythonMethod(statements, filename, lineno, funcname, modulename, body)
 def handleExportFuncs(statements, filename, lineno, m, classname):
     statements.append(ExportFuncsNode(filename, lineno, m.group(1), classname))
 
-def handleAddTask(statements, filename, lineno, m):
-    func = m.group("func")
-    before = m.group("before")
-    after = m.group("after")
-    if func is None:
-        return
+def handleAddTask(statements, filename, lineno, tasks, before, after):
+    statements.append(AddTaskNode(filename, lineno, tasks, before, after))
 
-    statements.append(AddTaskNode(filename, lineno, func, before, after))
-
-def handleDelTask(statements, filename, lineno, m):
-    func = m.group(1)
-    if func is None:
-        return
-
-    statements.append(DelTaskNode(filename, lineno, func))
+def handleDelTask(statements, filename, lineno, tasks):
+    statements.append(DelTaskNode(filename, lineno, tasks))
 
 def handleBBHandlers(statements, filename, lineno, m):
     statements.append(BBHandlerNode(filename, lineno, m.group(1)))
@@ -390,14 +382,6 @@ def finalize(fn, d, variant = None):
         # Found renamed variables. Exit immediately
         if d.getVar("_FAILPARSINGERRORHANDLED", False) == True:
             raise bb.BBHandledException()
-
-        while True:
-            inherits = d.getVar('__BBDEFINHERITS', False) or []
-            if not inherits:
-                break
-            inherit, filename, lineno = inherits.pop(0)
-            d.setVar('__BBDEFINHERITS', inherits)
-            bb.parse.BBHandler.inherit(inherit, filename, lineno, d, deferred=True)
 
         for var in d.getVar('__BBHANDLERS', False) or []:
             # try to add the handler
@@ -452,6 +436,14 @@ def multi_finalize(fn, d):
         logger.debug("Appending .bbappend file %s to %s", append, fn)
         bb.parse.BBHandler.handle(append, d, True)
 
+    while True:
+        inherits = d.getVar('__BBDEFINHERITS', False) or []
+        if not inherits:
+            break
+        inherit, filename, lineno = inherits.pop(0)
+        d.setVar('__BBDEFINHERITS', inherits)
+        bb.parse.BBHandler.inherit(inherit, filename, lineno, d, deferred=True)
+
     onlyfinalise = d.getVar("__ONLYFINALISE", False)
 
     safe_d = d
@@ -487,9 +479,7 @@ def multi_finalize(fn, d):
                 d.setVar("BBEXTENDVARIANT", variantmap[name])
             else:
                 d.setVar("PN", "%s-%s" % (pn, name))
-            inherits = d.getVar('__BBDEFINHERITS', False) or []
-            inherits.append((extendedmap[name], fn, 0))
-            d.setVar('__BBDEFINHERITS', inherits)
+            bb.parse.BBHandler.inherit(extendedmap[name], fn, 0, d)
 
         safe_d.setVar("BBCLASSEXTEND", extended)
         _create_variants(datastores, extendedmap.keys(), extendfunc, onlyfinalise)

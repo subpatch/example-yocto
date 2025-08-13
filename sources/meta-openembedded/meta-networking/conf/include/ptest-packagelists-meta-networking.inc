@@ -19,7 +19,6 @@ PTESTS_FAST_META_NETWORKING = "\
     openhpi \
     squid \
     tcpdump \
-    wolfssl \
 "
 
 # firewalld currently hangs forever so disable it for now

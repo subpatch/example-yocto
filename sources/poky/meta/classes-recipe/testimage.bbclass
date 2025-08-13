@@ -25,12 +25,10 @@ TESTIMAGE_AUTO ??= "0"
 TESTIMAGE_FAILED_QA_ARTIFACTS = "\
     ${localstatedir}/log \
     ${sysconfdir}/version \
-    ${sysconfdir}/os-release \
-    ${nonarch_libdir}/os-release \
-"
+    ${sysconfdir}/os-release"
 
 # If some ptests are run and fail, retrieve corresponding directories
-TESTIMAGE_FAILED_QA_ARTIFACTS += "${@bb.utils.contains('DISTRO_FEATURES', 'ptest', '${libdir}/${MCNAME}/ptest', '', d)}"
+TESTIMAGE_FAILED_QA_ARTIFACTS += "${@bb.utils.contains('DISTRO_FEATURES', 'ptest', '${libdir}/*/ptest', '', d)}"
 
 # You can set (or append to) TEST_SUITES in local.conf to select the tests
 # which you want to run for your target.
@@ -241,6 +239,8 @@ def testimage_main(d):
             bb.fatal('Unsupported image type built. Add a compatible image to '
                      'IMAGE_FSTYPES. Supported types: %s' %
                      ', '.join(supported_fstypes))
+    elif d.getVar("TEST_TARGET") == "serial":
+        bb.fatal('Serial target is currently only supported in testexport.')
     qfstype = fstypes[0]
     qdeffstype = d.getVar("QB_DEFAULT_FSTYPE")
     if qdeffstype:

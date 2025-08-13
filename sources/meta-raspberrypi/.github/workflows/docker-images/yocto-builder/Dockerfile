@@ -5,7 +5,7 @@
 FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND="noninteractive"
-RUN apt-get update -q -y
+RUN apt-get update -qq
 RUN apt-get install -y eatmydata
 
 # Yocto/OE build host dependencies

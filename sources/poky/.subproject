@@ -1,4 +1,4 @@
 [upstream]
-	object-id = 6f7e929ea6ea557f107c8ccffea69a7d73439591
-	revision = refs/heads/scarthgap
+	object-id = f57dc43765e76325b35e2b05390e41ea73ad810c
+	revision = styhead
 	url = https://git.yoctoproject.org/poky

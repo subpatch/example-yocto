@@ -28,7 +28,7 @@ FILES:${PN}-staticdev += "${libdir}/babeltrace2/plugins/*.a"
 FILES:${PN} += "${libdir}/babeltrace2/plugins/*.so"
 
 ASNEEDED = ""
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-lld ptest', ' -fuse-ld=bfd ', '', d)}"
+LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-lld ptest', '-fuse-ld=bfd ', '', d)}"
 
 # coreutils since we need full mktemp
 RDEPENDS:${PN}-ptest += "bash gawk python3 make grep coreutils findutils"
@@ -93,15 +93,3 @@ do_install_ptest () {
     # Remove architechture specific testfiles
     rm -rf ${D}${PTEST_PATH}/tests/data/plugins/flt.lttng-utils.debug-info/*
 }
-
-do_install:append:class-nativesdk() {
-    mkdir -p ${D}${SDKPATHNATIVE}/environment-setup.d
-    cat <<- EOF > ${D}${SDKPATHNATIVE}/environment-setup.d/babeltrace2.sh
-	export BABELTRACE_PLUGIN_PATH="${libdir}/babeltrace2/plugins"
-	export LIBBABELTRACE2_PLUGIN_PROVIDER_DIR="${libdir}/babeltrace2/plugin-providers"
-	EOF
-}
-
-FILES:${PN}:append:class-nativesdk = " ${SDKPATHNATIVE}/environment-setup.d/babeltrace2.sh"
-
-BBCLASSEXTEND = "nativesdk"

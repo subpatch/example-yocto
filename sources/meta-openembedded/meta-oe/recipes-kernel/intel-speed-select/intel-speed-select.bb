@@ -13,7 +13,7 @@ COMPATIBLE_HOST:libc-musl = 'null'
 
 DEPENDS = "libnl"
 
-do_populate_lic[depends] += "virtual/kernel:do_shared_workdir"
+do_populate_lic[depends] += "virtual/kernel:do_patch"
 
 B = "${WORKDIR}/${BPN}-${PV}"
 

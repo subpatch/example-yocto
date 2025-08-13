@@ -18,7 +18,9 @@ RPI_KERNEL_DEVICETREE_OVERLAYS ?= " \
     overlays/overlay_map.dtb \
     overlays/at86rf233.dtbo \
     overlays/disable-bt.dtbo \
+    overlays/disable-bt-pi5.dtbo \
     overlays/disable-wifi.dtbo \
+    overlays/disable-wifi-pi5.dtbo \
     overlays/dwc2.dtbo \
     overlays/gpio-ir.dtbo \
     overlays/gpio-ir-tx.dtbo \

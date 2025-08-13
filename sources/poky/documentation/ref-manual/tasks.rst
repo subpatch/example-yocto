@@ -412,12 +412,11 @@ them. You can learn more by looking at the
 -------------
 
 Unpacks the source code into a working directory pointed to by
-``${``\ :term:`WORKDIR`\ ``}``. The :term:`S`
-variable also plays a role in where unpacked source files ultimately
-reside. For more information on how source files are unpacked, see the
+``${``\ :term:`UNPACKDIR`\ ``}``. A legacy way to specify
+this directory is through the :term:`S` and :term:`WORKDIR` variables.
+For more information on how source files are unpacked, see the
 ":ref:`overview-manual/concepts:source fetching`"
-section in the Yocto Project Overview and Concepts Manual and also see
-the :term:`WORKDIR` and :term:`S` variable descriptions.
+section in the Yocto Project Overview and Concepts Manual.
 
 Manually Called Tasks
 =====================
@@ -727,7 +726,7 @@ tool, which you then use to modify the kernel configuration.
            $ bitbake linux-yocto -c menuconfig
 
 
-See the ":ref:`kernel-dev/common:using ``menuconfig```"
+See the ":ref:`kernel-dev/common:using \`\`menuconfig\`\``"
 section in the Yocto Project Linux Kernel Development Manual for more
 information on this configuration tool.
 
@@ -751,7 +750,7 @@ which can then be applied by subsequent tasks such as
 
 Runs ``make menuconfig`` for the kernel. For information on
 ``menuconfig``, see the
-":ref:`kernel-dev/common:using ``menuconfig```"
+":ref:`kernel-dev/common:using \`\`menuconfig\`\``"
 section in the Yocto Project Linux Kernel Development Manual.
 
 .. _ref-tasks-savedefconfig:

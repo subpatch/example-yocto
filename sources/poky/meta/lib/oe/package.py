@@ -196,14 +196,28 @@ def strip_execs(pn, dstdir, strip_cmd, libdir, base_libdir, max_process, qa_alre
 
     oe.utils.multiprocess_launch_mp(runstrip, sfiles, max_process)
 
+TRANSLATE = (
+    ("@", "@at@"),
+    (" ", "@space@"),
+    ("\t", "@tab@"),
+    ("[", "@openbrace@"),
+    ("]", "@closebrace@"),
+    ("_", "@underscore@"),
+    (":", "@colon@"),
+)
 
 def file_translate(file):
-    ft = file.replace("@", "@at@")
-    ft = ft.replace(" ", "@space@")
-    ft = ft.replace("\t", "@tab@")
-    ft = ft.replace("[", "@openbrace@")
-    ft = ft.replace("]", "@closebrace@")
-    ft = ft.replace("_", "@underscore@")
+    ft = file
+    for s, replace in TRANSLATE:
+        ft = ft.replace(s, replace)
+
+    return ft
+
+def file_reverse_translate(file):
+    ft = file
+    for s, replace in reversed(TRANSLATE):
+        ft = ft.replace(replace, s)
+
     return ft
 
 def filedeprunner(arg):
@@ -1038,49 +1052,6 @@ def copydebugsources(debugsrcdir, sources, d):
             if os.path.exists(p) and not os.listdir(p):
                 os.rmdir(p)
 
-def save_debugsources_info(debugsrcdir, sources_raw, d):
-    import json
-    import bb.compress.zstd
-    if debugsrcdir and sources_raw:
-        debugsources_file = d.expand("${PKGDESTWORK}/debugsources/${PN}-debugsources.json.zstd")
-        debugsources_dir = os.path.dirname(debugsources_file)
-        if not os.path.isdir(debugsources_dir):
-            bb.utils.mkdirhier(debugsources_dir)
-        bb.utils.remove(debugsources_file)
-
-        workdir = d.getVar("WORKDIR")
-        pn = d.getVar('PN')
-
-        # Kernel sources are in a different directory and are special case
-        # we format the sources as expected by spdx by replacing /usr/src/kernel/
-        # into BP/
-        kernel_src = d.getVar('KERNEL_SRC_PATH')
-        pf = d.getVar('PF')
-        sources_dict = {}
-        for file, src_files in sources_raw:
-            file_clean = file.replace(f"{workdir}/package/","")
-            sources_clean = [
-                src.replace(f"{debugsrcdir}/{pn}/", "")
-                if not kernel_src else src.replace(f"{kernel_src}/", f"{pf}/")
-                for src in src_files
-                if not any(keyword in src for keyword in ("<internal>", "<built-in>")) and not src.endswith("/")
-            ]
-            sources_dict[file_clean] = sorted(sources_clean)
-        num_threads = int(d.getVar("BB_NUMBER_THREADS"))
-        with bb.compress.zstd.open(debugsources_file, "wt", encoding="utf-8", num_threads=num_threads) as f:
-            json.dump(sources_dict, f, sort_keys=True)
-
-def read_debugsources_info(d):
-    import json
-    import bb.compress.zstd
-    try:
-        fn = d.expand("${PKGDESTWORK}/debugsources/${PN}-debugsources.json.zstd")
-        num_threads = int(d.getVar("BB_NUMBER_THREADS"))
-        with bb.compress.zstd.open(fn, "rt", encoding="utf-8", num_threads=num_threads) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        bb.debug(1, f"File not found: {fn}")
-        return None
 
 def process_split_and_strip_files(d):
     cpath = oe.cachedpath.CachedPath()
@@ -1312,9 +1283,6 @@ def process_split_and_strip_files(d):
         # Process the dv["srcdir"] if requested...
         # This copies and places the referenced sources for later debugging...
         copydebugsources(dv["srcdir"], sources, d)
-
-        # Save source info to be accessible to other tasks
-        save_debugsources_info(dv["srcdir"], results, d)
     #
     # End of debug splitting
     #
@@ -1924,7 +1892,7 @@ def process_pkgconfig(pkgfiles, d):
                         if m:
                             hdr = m.group(1)
                             exp = pd.expand(m.group(2))
-                            if hdr == 'Requires':
+                            if hdr == 'Requires' or hdr == 'Requires.private':
                                 pkgconfig_needed[pkg] += exp.replace(',', ' ').split()
                                 continue
                         m = var_re.match(l)

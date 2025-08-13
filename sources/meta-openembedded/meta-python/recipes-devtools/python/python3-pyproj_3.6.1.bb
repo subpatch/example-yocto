@@ -4,9 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=873757af01d2d221eedb422c4c1dd163"
 DEPENDS = "python3-cython proj"
 DEPENDS:append:class-target = " python3-cython-native proj-native"
 
-PYPI_PACKAGE = "pyproj"
-
-inherit pypi setuptools3
+inherit pypi python_setuptools_build_meta
 
 SRC_URI += "file://rpath.patch"
 

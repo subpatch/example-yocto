@@ -13,7 +13,7 @@ system and gives an overview of their function and contents.
 :term:`K <KARCH>` :term:`L <LABELS>` :term:`M <MACHINE>`
 :term:`N <NATIVELSBSTRING>` :term:`O <OBJCOPY>` :term:`P`
 :term:`R <RANLIB>` :term:`S` :term:`T`
-:term:`U <UBOOT_CONFIG>` :term:`V <VOLATILE_LOG_DIR>`
+:term:`U <UBOOT_CONFIG>` :term:`V <VIRTUAL-RUNTIME>`
 :term:`W <WARN_QA>` :term:`X <XSERVER>`
 
 .. glossary::
@@ -2110,6 +2110,13 @@ system and gives an overview of their function and contents.
          by :term:`BBFILE_PRIORITY` if that variable is different between two
          layers that contain different versions of the same recipe.
 
+   :term:`DEFAULT_TIMEZONE`
+      Specifies the time zone set in the image.
+
+      This variable causes the ``tzdata`` package to configure
+      ``${sysconfdir}/localtime`` accordingly. Valid values are all files
+      found in ``/usr/share/zoneinfo`` like ``CET`` or ``Asia/Baku``.
+
    :term:`DEFAULTTUNE`
       The default CPU and Application Binary Interface (ABI) tunings (i.e.
       the "tune") used by the OpenEmbedded build system. The
@@ -2199,7 +2206,7 @@ system and gives an overview of their function and contents.
       resides within the :term:`Build Directory` as ``${TMPDIR}/deploy``.
 
       For more information on the structure of the Build Directory, see
-      ":ref:`ref-manual/structure:the build directory --- ``build/```" section.
+      ":ref:`ref-manual/structure:the build directory --- \`\`build/\`\``" section.
       For more detail on the contents of the ``deploy`` directory, see the
       ":ref:`overview-manual/concepts:images`",
       ":ref:`overview-manual/concepts:package feeds`", and
@@ -2241,7 +2248,7 @@ system and gives an overview of their function and contents.
       contents of :term:`IMGDEPLOYDIR` by the :ref:`ref-classes-image` class.
 
       For more information on the structure of the :term:`Build Directory`, see
-      ":ref:`ref-manual/structure:the build directory --- ``build/```" section.
+      ":ref:`ref-manual/structure:the build directory --- \`\`build/\`\``" section.
       For more detail on the contents of the ``deploy`` directory, see the
       ":ref:`overview-manual/concepts:images`" and
       ":ref:`overview-manual/concepts:application development sdk`" sections both in
@@ -3224,26 +3231,32 @@ system and gives an overview of their function and contents.
       :ref:`ref-tasks-patch` task as well.
 
    :term:`FILESYSTEM_PERMS_TABLES`
-      Allows you to define your own file permissions settings table as part
+      Allows you to define your own file permissions settings tables as part
       of your configuration for the packaging process. For example, suppose
       you need a consistent set of custom permissions for a set of groups
       and users across an entire work project. It is best to do this in the
       packages themselves but this is not always possible.
 
       By default, the OpenEmbedded build system uses the ``fs-perms.txt``,
-      which is located in the ``meta/files`` folder in the :term:`Source Directory`.
-      If you create your own file
-      permissions setting table, you should place it in your layer or the
-      distro's layer.
+      ``fs-perms-volatile-log.txt`` and ``fs-perms-volatile-tmp.txt`` which are
+      located in the ``meta/files`` folder in the :term:`Source Directory`. If
+      you create your own permission setting table files, you should place
+      those in your layer.
 
-      You define the :term:`FILESYSTEM_PERMS_TABLES` variable in the
-      ``conf/local.conf`` file, which is found in the :term:`Build Directory`,
-      to point to your custom ``fs-perms.txt``. You can specify more than a
-      single file permissions setting table. The paths you specify to these
-      files must be defined within the :term:`BBPATH` variable.
+      You can override the value of :term:`FILESYSTEM_PERMS_TABLES` variable
+      in your distribution configuration file to point to your custom
+      permission table files. You can specify one or more file permissions
+      setting tables. The paths that you specify to these files must be defined
+      within the :term:`BBPATH` variable.
 
-      For guidance on how to create your own file permissions settings
-      table file, examine the existing ``fs-perms.txt``.
+      In order to disable the volatile log, which is enabled by default, one
+      can remove the ``files/fs-perms-volatile-log.txt`` value from
+      ``FILESYSTEM_PERMS_TABLES``. Similarly, in order to disable the volatile
+      tmp, one can remove the ``files/fs-perms-volatile-tmp.txt`` value.
+
+      For guidance on how to define your own file permissions settings
+      tables, examine the existing ``fs-perms.txt``,
+      ``fs-perms-volatile-log.txt`` and ``fs-perms-volatile-tmp.txt`` files.
 
    :term:`FIT_ADDRESS_CELLS`
       Specifies the value of the ``#address-cells`` value for the
@@ -4047,6 +4060,25 @@ system and gives an overview of their function and contents.
       clear the value of this variable (set the value to ""). For example,
       this is typically cleared in :term:`Initramfs` image recipes.
 
+   :term:`IMAGE_OUTPUT_MANIFEST`
+      When inheriting the :ref:`ref-classes-image` class directly or through the
+      :ref:`ref-classes-core-image` class, the :term:`IMAGE_OUTPUT_MANIFEST`
+      points to a manifest ``json`` file that lists what images were created by
+      various image creation tasks (as defined by the :term:`IMAGE_FSTYPES`
+      variable). It is set in the :ref:`ref-classes-image` class as follows::
+
+          IMAGE_OUTPUT_MANIFEST = "${IMAGE_OUTPUT_MANIFEST_DIR}/manifest.json"
+
+   :term:`IMAGE_OUTPUT_MANIFEST_DIR`
+      When inheriting the :ref:`ref-classes-image` class directly or through the
+      :ref:`ref-classes-core-image` class, the :term:`IMAGE_OUTPUT_MANIFEST_DIR` points to
+      a directory that stores a manifest ``json`` file that lists what
+      images were created by various image creation tasks (as defined by the
+      :term:`IMAGE_FSTYPES` variable). It is set in the :ref:`ref-classes-image`
+      class as follows::
+
+          IMAGE_OUTPUT_MANIFEST_DIR = "${WORKDIR}/deploy-image-output-manifest"
+
    :term:`IMAGE_OVERHEAD_FACTOR`
       Defines a multiplier that the build system applies to the initial
       image size for cases when the multiplier times the returned disk
@@ -4076,13 +4108,13 @@ system and gives an overview of their function and contents.
       variable.
 
    :term:`IMAGE_PKGTYPE`
-      Defines the package type (i.e. DEB, RPM or IPK) used by the
+      Defines the package type (i.e. DEB, RPM, IPK, or TAR) used by the
       OpenEmbedded build system. The variable is defined appropriately by
-      one of the :ref:`ref-classes-package_deb`, :ref:`ref-classes-package_rpm`,
-      or :ref:`ref-classes-package_ipk` classes.
+      the :ref:`ref-classes-package_deb`, :ref:`ref-classes-package_rpm`,
+      or :ref:`ref-classes-package_ipk` class.
 
       The :ref:`ref-classes-populate-sdk-*` and :ref:`ref-classes-image`
-      classes use the :term:`IMAGE_PKGTYPE` for packaging images and SDKs.
+      classes use the :term:`IMAGE_PKGTYPE` for packaging up images and SDKs.
 
       You should not set the :term:`IMAGE_PKGTYPE` manually. Rather, the
       variable is set indirectly through the appropriate
@@ -4090,6 +4122,12 @@ system and gives an overview of their function and contents.
       :term:`PACKAGE_CLASSES` variable. The
       OpenEmbedded build system uses the first package type (e.g. DEB, RPM,
       or IPK) that appears with the variable
+
+      .. note::
+
+         Files using the ``.tar`` format are never used as a substitute
+         packaging format for DEB, RPM, and IPK formatted files for your image
+         or SDK.
 
    :term:`IMAGE_POSTPROCESS_COMMAND`
       Specifies a list of functions to call once the OpenEmbedded build
@@ -4148,33 +4186,9 @@ system and gives an overview of their function and contents.
          IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
 
    :term:`IMAGE_ROOTFS_MAXSIZE`
-      Defines the maximum allowed size of the generated image in kilobytes.
-      The build will fail if the generated image size exceeds this value.
-
-      The generated image size undergoes several calculation steps before being
-      compared to :term:`IMAGE_ROOTFS_MAXSIZE`.
-      In the first step, the size of the directory pointed to by :term:`IMAGE_ROOTFS`
-      is calculated.
-      In the second step, the result from the first step is multiplied
-      by :term:`IMAGE_OVERHEAD_FACTOR`.
-      In the third step, the result from the second step is compared with
-      :term:`IMAGE_ROOTFS_SIZE`. The larger value of these is added to
-      :term:`IMAGE_ROOTFS_EXTRA_SPACE`.
-      In the fourth step, the result from the third step is checked for
-      a decimal part. If it has one, it is rounded up to the next integer.
-      If it does not, it is simply converted into an integer.
-      In the fifth step, the :term:`IMAGE_ROOTFS_ALIGNMENT` is added to the result
-      from the fourth step and "1" is subtracted.
-      In the sixth step, the remainder of the division between the result
-      from the fifth step and :term:`IMAGE_ROOTFS_ALIGNMENT` is subtracted from the
-      result of the fifth step. In this way, the result from the fourth step is
-      rounded up to the nearest multiple of :term:`IMAGE_ROOTFS_ALIGNMENT`.
-
-      Thus, if the :term:`IMAGE_ROOTFS_MAXSIZE` is set, is compared with the result
-      of the above calculations and is independent of the final image type.
-      No default value is set for :term:`IMAGE_ROOTFS_MAXSIZE`.
-
-      It's a good idea to set this variable for images that need to fit on a limited
+      Defines the maximum size in Kbytes for the generated image. If the
+      generated image size is above that, the build will fail. It's a good
+      idea to set this variable for images that need to fit on a limited
       space (e.g. SD card, a fixed-size partition, ...).
 
    :term:`IMAGE_ROOTFS_SIZE`
@@ -4257,6 +4271,7 @@ system and gives an overview of their function and contents.
       - wic.bz2
       - wic.gz
       - wic.lzma
+      - wic.zst
 
       For more information about these types of images, see
       ``meta/classes-recipe/image_types*.bbclass`` in the :term:`Source Directory`.
@@ -4280,6 +4295,16 @@ system and gives an overview of their function and contents.
       Recipes inheriting the :ref:`ref-classes-image` class should copy
       files to be deployed into :term:`IMGDEPLOYDIR`, and the class will take
       care of copying them into :term:`DEPLOY_DIR_IMAGE` afterwards.
+
+   :term:`IMGMANIFESTDIR`
+      When inheriting the :ref:`ref-classes-image` class directly or through the
+      :ref:`ref-classes-core-image` class, the :term:`IMGMANIFESTDIR` setting
+      points to a temporary area that stores manifest ``json`` files, that list
+      what images were created by various images creation tasks (as defined by
+      the :term:`IMAGE_FSTYPES` variable). It is set in the
+      :ref:`ref-classes-image` class as follows::
+
+          IMGMANIFESTDIR = "${WORKDIR}/image-task-manifest"
 
    :term:`INCOMPATIBLE_LICENSE`
       Specifies a space-separated list of license names (as they would
@@ -4358,23 +4383,6 @@ system and gives an overview of their function and contents.
       Set the variable to "1" to prevent the default dependencies from
       being added.
 
-   :term:`INHIBIT_DEFAULT_RUST_DEPS`
-      Prevents the :ref:`ref-classes-rust` class from automatically adding
-      its default build-time dependencies.
-
-      When a recipe inherits the :ref:`ref-classes-rust` class, several
-      tools such as ``rust-native`` and ``${RUSTLIB_DEP}`` (only added when cross-compiling) are added
-      to :term:`DEPENDS` to support the ``rust`` build process.
-
-      To prevent the build system from adding these dependencies automatically,
-      set the :term:`INHIBIT_DEFAULT_RUST_DEPS` variable as follows::
-
-         INHIBIT_DEFAULT_RUST_DEPS = "1"
-
-      By default, the value of :term:`INHIBIT_DEFAULT_RUST_DEPS` is empty. Setting
-      it to "0" does not disable inhibition. Only the empty string will disable
-      inhibition.
-
    :term:`INHIBIT_PACKAGE_DEBUG_SPLIT`
       Prevents the OpenEmbedded build system from splitting out debug
       information during packaging. By default, the build system splits out
@@ -4420,25 +4428,6 @@ system and gives an overview of their function and contents.
          bare-metal firmware by using an external GCC toolchain. Furthermore,
          even if the toolchain's binaries are strippable, there are other files
          needed for the build that are not strippable.
-
-   :term:`INHIBIT_UPDATERCD_BBCLASS`
-      Prevents the :ref:`ref-classes-update-rc.d` class from automatically
-      installing and registering SysV init scripts for packages.
-
-      When a recipe inherits the :ref:`ref-classes-update-rc.d` class, init
-      scripts are typically installed and registered for the packages listed in
-      :term:`INITSCRIPT_PACKAGES`. This ensures that the relevant
-      services are started and stopped at the appropriate runlevels using the
-      traditional SysV init system.
-
-      To prevent the build system from adding these scripts and configurations
-      automatically, set the :term:`INHIBIT_UPDATERCD_BBCLASS` variable as follows::
-
-         INHIBIT_UPDATERCD_BBCLASS = "1"
-
-      By default, the value of :term:`INHIBIT_UPDATERCD_BBCLASS` is empty. Setting
-      it to "0" does not disable inhibition. Only the empty string will disable
-      inhibition.
 
    :term:`INIT_MANAGER`
       Specifies the system init manager to use. Available options are:
@@ -4605,20 +4594,6 @@ system and gives an overview of their function and contents.
 
       See the :term:`MACHINE` variable for additional
       information.
-
-   :term:`INITRAMFS_MAXSIZE`
-      Defines the maximum allowed size of the :term:`Initramfs` image in Kbytes.
-      The build will fail if the :term:`Initramfs` image size exceeds this value.
-
-      The :term:`Initramfs` image size undergoes several calculation steps before
-      being compared to :term:`INITRAMFS_MAXSIZE`.
-      These steps are the same as those used for :term:`IMAGE_ROOTFS_MAXSIZE`
-      and are described in detail in that entry.
-
-      Thus, :term:`INITRAMFS_MAXSIZE` is compared with the result of the calculations
-      and is independent of the final image type (e.g. compressed).
-      A default value for :term:`INITRAMFS_MAXSIZE` is set in
-      :oe_git:`meta/conf/bitbake.conf </openembedded-core/tree/meta/conf/bitbake.conf>`.
 
    :term:`INITRAMFS_MULTICONFIG`
       Defines the multiconfig to create a multiconfig dependency to be used by
@@ -4802,8 +4777,15 @@ system and gives an overview of their function and contents.
       options not explicitly specified will be disabled in the kernel
       config.
 
-      In case :term:`KCONFIG_MODE` is not set the ``defconfig`` file
-      will be handled in ``allnoconfig`` mode.
+      In case :term:`KCONFIG_MODE` is not set the behaviour will depend on where
+      the ``defconfig`` file is coming from. An "in-tree" ``defconfig`` file
+      will be handled in ``alldefconfig`` mode, a ``defconfig`` file placed
+      in ``${WORKDIR}`` through a meta-layer will be handled in
+      ``allnoconfig`` mode.
+
+      An "in-tree" ``defconfig`` file can be selected via the
+      :term:`KBUILD_DEFCONFIG` variable. :term:`KCONFIG_MODE` does not need to
+      be explicitly set.
 
       A ``defconfig`` file compatible with ``allnoconfig`` mode can be
       generated by copying the ``.config`` file from a working Linux kernel
@@ -5104,27 +5086,6 @@ system and gives an overview of their function and contents.
       :term:`KERNEL_SRC` variable, which is identical to
       the :term:`KERNEL_PATH` variable. Both variables are common variables
       used by external Makefiles to point to the kernel source directory.
-
-   :term:`KERNEL_SPLIT_MODULES`
-      When inheriting the :ref:`ref-classes-kernel-module-split` class, this
-      variable controls whether kernel modules are split into separate packages
-      or bundled into a single package.
-
-      For some use cases, a monolithic kernel module package
-      :term:`KERNEL_PACKAGE_NAME` that contains all modules built from the
-      kernel sources may be preferred to speed up the installation.
-
-      By default, this variable is set to ``1``, resulting in one package per
-      module. Setting it to any other value will generate a single monolithic
-      package containing all kernel modules.
-
-      .. note::
-
-         If :term:`KERNEL_SPLIT_MODULES` is set to 0, it is still possible to
-         install all kernel modules at once by adding ``kernel-modules`` (assuming
-         :term:`KERNEL_PACKAGE_NAME` is ``kernel-modules``) to :term:`IMAGE_INSTALL`.
-         The way it works is that a placeholder "kernel-modules" package will be
-         created and will depend on every other individual kernel module packages.
 
    :term:`KERNEL_SRC`
       The location of the kernel sources. This variable is set to the value
@@ -5947,6 +5908,21 @@ system and gives an overview of their function and contents.
       list with::
 
          NON_MULTILIB_RECIPES = "grub grub-efi make-mod-scripts ovmf u-boot"
+
+   :term:`NVDCVE_API_KEY`
+      The NVD API key used to retrieve data from the CVE database when
+      using :ref:`ref-classes-cve-check`.
+
+      By default, no API key is used, which results in larger delays between API
+      requests and limits the number of queries to the public rate limits posted
+      at the `NVD developer's page <https://nvd.nist.gov/developers/start-here>`__.
+      
+      NVD API keys can be requested through the
+      `Request an API Key <https://nvd.nist.gov/developers/request-an-api-key>`__
+      page. You can set this variable to the NVD API key in your ``local.conf`` file.
+      Example::
+
+          NVDCVE_API_KEY = "fe753&7a2-1427-347d-23ff-b2e2b7ca5f3"
 
    :term:`OBJCOPY`
       The minimal command and arguments to run :manpage:`objcopy <objcopy(1)>`.
@@ -6812,7 +6788,7 @@ system and gives an overview of their function and contents.
       For examples of how this data is used, see the
       ":ref:`overview-manual/concepts:automatically added runtime dependencies`"
       section in the Yocto Project Overview and Concepts Manual and the
-      ":ref:`dev-manual/debugging:viewing package information with ``oe-pkgdata-util```"
+      ":ref:`dev-manual/debugging:viewing package information with \`\`oe-pkgdata-util\`\``"
       section in the Yocto Project Development Tasks Manual. For more
       information on the shared, global-state directory, see
       :term:`STAGING_DIR_HOST`.
@@ -6866,7 +6842,7 @@ system and gives an overview of their function and contents.
          the package is built, the version information can be retrieved with
          ``oe-pkgdata-util package-info <package name>``. See the
          :ref:`dev-manual/debugging:Viewing Package Information with
-         ``oe-pkgdata-util``` section of the Yocto Project Development Tasks
+         \`\`oe-pkgdata-util\`\`` section of the Yocto Project Development Tasks
          Manual for more information on ``oe-pkgdata-util``.
 
 
@@ -7165,6 +7141,11 @@ system and gives an overview of their function and contents.
       service <dev-manual/packages:working with a pr service>`. You can
       set :term:`PRSERV_HOST` to other values to use a remote PR service.
 
+   :term:`PRSERV_UPSTREAM`
+      This variable can be used to specify an upstream PR server for the local
+      PR server to connect to, in the form of ``host:port``.
+
+      This makes it possible to implement local fixes to an upstream package.
 
    :term:`PSEUDO_IGNORE_PATHS`
       A comma-separated (without spaces) list of path prefixes that should be ignored
@@ -7199,6 +7180,19 @@ system and gives an overview of their function and contents.
       prefix off if present), however for some packages it will need to be set
       explicitly if that will not match the package name (e.g. where the
       package name has a prefix, underscores, uppercase letters etc.)
+
+   :term:`PYPI_PACKAGE_EXT`
+      When inheriting the :ref:`ref-classes-pypi` class, specifies the
+      file extension to use when fetching a package from `PyPI
+      <https://pypi.org/>`__. Default is ``tar.gz``.
+
+   :term:`PYPI_SRC_URI`
+      When inheriting the :ref:`ref-classes-pypi` class, specifies the
+      full `pythonhosted <https://files.pythonhosted.org/>`__ URI for
+      fetching the package to be built. The default value is constructed
+      based upon :term:`PYPI_PACKAGE`, :term:`PYPI_PACKAGE_EXT`, and
+      :term:`PV`. Most recipes will not need to set this variable unless
+      they are building an unstable (i.e. development) version.
 
    :term:`PYTHON_ABI`
       When used by recipes that inherit the :ref:`ref-classes-setuptools3`
@@ -7426,6 +7420,17 @@ system and gives an overview of their function and contents.
       The default value is ``"${WORKDIR}/recipe-sysroot-native"``.
       Do not modify it.
 
+   :term:`RECIPE_UPGRADE_EXTRA_TASKS`
+      When upgrading a recipe with ``devtool upgrade``, the variable
+      :term:`RECIPE_UPGRADE_EXTRA_TASKS` specifies a space-delimited list of
+      tasks to run after the new sources have been unpacked.
+
+      For some recipes, after the new source has been unpacked, additional tasks
+      may need to be run during an upgrade. A good example of this is recipes
+      which inherit :ref:`ref-classes-cargo-update-recipe-crates`, where the
+      `do_update_crates` task needs to be run whenever Cargo.toml/Cargo.lock have
+      changed in the source.
+
    :term:`REPODIR`
       See :term:`bitbake:REPODIR` in the BitBake manual.
 
@@ -7450,6 +7455,41 @@ system and gives an overview of their function and contents.
       If both :term:`REQUIRED_VERSION` and :term:`PREFERRED_VERSION` are set
       for the same recipe, the :term:`REQUIRED_VERSION` value applies.
 
+   :term:`RETAIN_DIRS_ALWAYS`
+      When inheriting the :ref:`ref-classes-retain` class, this variable holds
+      space-separated recipe-specific directories to always save in a tarball
+      whether the recipe build has failed or not.
+
+   :term:`RETAIN_DIRS_FAILURE`
+      When inheriting the :ref:`ref-classes-retain` class, this variable holds
+      space-separated recipe-specific directories to save in a tarball on
+      failure of the recipe's build.
+
+   :term:`RETAIN_DIRS_GLOBAL_ALWAYS`
+      When inheriting the :ref:`ref-classes-retain` class, this variable holds
+      space-separated directories that are not specific to a recipe to save in a
+      tarball whether the build has failed or not.
+
+   :term:`RETAIN_DIRS_GLOBAL_FAILURE`
+      When inheriting the :ref:`ref-classes-retain` class, this variable holds
+      space-separated directories that are not specific to a recipe to save in a
+      tarball on build failure.
+
+   :term:`RETAIN_ENABLED`
+      Disables the creation of a tarball of the work directory done by the
+      :ref:`ref-classes-retain` class. Can be set to specific recipes to disable
+      the class when the class was inherited globally with :term:`INHERIT`.
+
+   :term:`RETAIN_OUTDIR`
+      When inheriting the :ref:`ref-classes-retain` class, this variable
+      specifies the directory where to save the tarball of the work directory.
+      The default directory is ``${TMPDIR}/retain``.
+
+   :term:`RETAIN_TARBALL_SUFFIX`
+      When inheriting the :ref:`ref-classes-retain` class, this variable
+      specifies the suffix of the tarball of the work directory. The default
+      suffix is ``${DATETIME}.tar.gz``.
+
    :term:`RM_WORK_EXCLUDE`
       With :ref:`ref-classes-rm-work` enabled, this variable
       specifies a list of recipes whose work directories should not be removed.
@@ -7467,12 +7507,17 @@ system and gives an overview of their function and contents.
          prefer to have a read-only root filesystem and prefer to keep
          writeable data in one place.
 
-      When setting ``INIT_MANAGER = systemd``, the default will be set to::
+      You can override the default by setting the variable in any layer or
+      in the ``local.conf`` file. Because the default is set using a "weak"
+      assignment (i.e. "??="), you can use either of the following forms to
+      define your override::
 
+         ROOT_HOME = "/root"
          ROOT_HOME ?= "/root"
 
-      You can also override the default by setting the variable in your distro
-      configuration or in the ``local.conf`` file.
+      These
+      override examples use ``/root``, which is probably the most commonly
+      used override.
 
    :term:`ROOTFS`
       Indicates a filesystem image to include as the root filesystem.
@@ -8465,7 +8510,7 @@ system and gives an overview of their function and contents.
       class.
 
    :term:`SPL_SIGN_KEYNAME`
-      The name of keys used by the :ref:`ref-classes-uboot-sign` class
+      The name of keys used by the :ref:`ref-classes-kernel-fitimage` class
       for signing U-Boot FIT image stored in the :term:`SPL_SIGN_KEYDIR`
       directory. If we have for example a ``dev.key`` key and a ``dev.crt``
       certificate stored in the :term:`SPL_SIGN_KEYDIR` directory, you will
@@ -8729,7 +8774,7 @@ system and gives an overview of their function and contents.
       The Yocto Project actually shares the cache data objects built by its
       autobuilder::
 
-         SSTATE_MIRRORS ?= "file://.* http://sstate.yoctoproject.org/all/PATH;downloadfilename=PATH"
+         SSTATE_MIRRORS ?= "file://.* http://cdn.jsdelivr.net/yocto/sstate/all/PATH;downloadfilename=PATH"
 
       As such binary artifacts are built for the generic QEMU machines
       supported by the various Poky releases, they are less likely to be
@@ -8752,26 +8797,6 @@ system and gives an overview of their function and contents.
       :ref:`ref-classes-sstate` class specifies the default list of files.
 
       For details on the process, see the :ref:`ref-classes-staging` class.
-
-   :term:`SSTATE_SKIP_CREATION`
-      The :term:`SSTATE_SKIP_CREATION` variable can be used to skip the
-      creation of :ref:`shared state <overview-manual/concepts:shared state cache>`
-      tarball files. It makes sense e.g. for image creation tasks as tarring images
-      and keeping them in sstate would consume a lot of disk space.
-
-      In general it is not recommended to use this variable as missing sstate
-      artefacts adversely impact the build, particularly for entries in the
-      middle of dependency chains. The case it can make sense is where the
-      size and time costs of the artefact are similar to just running the
-      tasks. This generally only applies to end artefact output like images.
-
-      The syntax to disable it for one task is::
-
-         SSTATE_SKIP_CREATION:task-image-complete = "1"
-
-      The syntax to disable it for the whole recipe is::
-
-         SSTATE_SKIP_CREATION = "1"
 
    :term:`STAGING_BASE_LIBDIR_NATIVE`
       Specifies the path to the ``/lib`` subdirectory of the sysroot
@@ -9399,19 +9424,6 @@ system and gives an overview of their function and contents.
       the build process.
 
       You can select "glibc", "musl", "newlib", or "baremetal".
-
-   :term:`TCLIBCAPPEND`
-      Specifies a suffix to be appended onto the :term:`TMPDIR` value. The
-      suffix identifies the ``libc`` variant for building. When you are
-      building for multiple variants with the same :term:`Build Directory`,
-      this mechanism ensures that output for different ``libc`` variants is
-      kept separate to avoid potential conflicts.
-
-      In the ``defaultsetup.conf`` file, the default value of
-      :term:`TCLIBCAPPEND` is "-${TCLIBC}". However, distros such as poky,
-      which normally only support one ``libc`` variant, set
-      :term:`TCLIBCAPPEND` to "" in their distro configuration file resulting
-      in no suffix being applied.
 
    :term:`TCMODE`
       Specifies the toolchain selector. :term:`TCMODE` controls the
@@ -10181,6 +10193,11 @@ system and gives an overview of their function and contents.
       :ref:`ref-classes-insane` class and is only enabled if the
       recipe inherits the :ref:`ref-classes-autotools` class.
 
+   :term:`UNPACKDIR`
+      This variable, used by the :ref:`ref-classes-base` class,
+      specifies where fetches sources should be unpacked by the
+      :ref:`ref-tasks-unpack` task.
+
    :term:`UPDATERCPN`
       For recipes inheriting the
       :ref:`ref-classes-update-rc.d` class, :term:`UPDATERCPN`
@@ -10440,26 +10457,6 @@ system and gives an overview of their function and contents.
 
          PACKAGE_INSTALL = "${INITRAMFS_SCRIPTS} ${VIRTUAL-RUNTIME_base-utils} base-passwd"
 
-   :term:`VOLATILE_LOG_DIR`
-      Specifies the persistence of the target's ``/var/log`` directory,
-      which is used to house postinstall target log files.
-
-      By default, :term:`VOLATILE_LOG_DIR` is set to "yes", which means the
-      file is not persistent. You can override this setting by setting the
-      variable to "no" to make the log directory persistent.
-
-   :term:`VOLATILE_TMP_DIR`
-      Specifies the persistence of the target's ``/tmp`` directory.
-
-      By default, :term:`VOLATILE_TMP_DIR` is set to "yes", in which case
-      ``/tmp`` links to a directory which resides in RAM in a ``tmpfs``
-      filesystem.
-
-      If instead, you want the ``/tmp`` directory to be persistent, set the
-      variable to "no" to make it a regular directory in the root filesystem.
-
-      This supports both sysvinit and systemd based systems.
-
    :term:`WARN_QA`
       Specifies the quality assurance checks whose failures are reported as
       warnings by the OpenEmbedded build system. You set this variable in
@@ -10470,20 +10467,6 @@ system and gives an overview of their function and contents.
    :term:`WATCHDOG_TIMEOUT`
       Specifies the timeout in seconds used by the ``watchdog-config`` recipe
       and also by ``systemd`` during reboot. The default is 60 seconds.
-
-   :term:`WIC_CREATE_EXTRA_ARGS`
-      If the :term:`IMAGE_FSTYPES` variable contains "wic", the build
-      will generate a
-      :ref:`Wic image <dev-manual/wic:creating partitioned images using wic>`
-      automatically when BitBake builds an image recipe. As part of
-      this process BitBake will invoke the "`wic create`" command. The
-      :term:`WIC_CREATE_EXTRA_ARGS` variable is placed at the end of this
-      command which allows the user to supply additional arguments.
-
-      One such useful purpose for this mechanism is to add the ``-D`` (or
-      ``--debug``) argument to the "`wic create`" command. This increases the
-      amount of debugging information written out to the Wic log during the
-      Wic creation process.
 
    :term:`WIRELESS_DAEMON`
       For ``connman`` and ``packagegroup-base``, specifies the wireless
