@@ -282,7 +282,6 @@ class BBCooker:
         self.databuilder = bb.cookerdata.CookerDataBuilder(self.configuration, False)
         self.databuilder.parseBaseConfiguration()
         self.data = self.databuilder.data
-        self.data_hash = self.databuilder.data_hash
         self.extraconfigdata = {}
 
         eventlog = self.data.getVar("BB_DEFAULT_EVENTLOG")
@@ -370,6 +369,11 @@ class BBCooker:
 
         if not clean:
             bb.parse.BBHandler.cached_statements = {}
+
+        # If writes were made to any of the data stores, we need to recalculate the data
+        # store cache
+        if hasattr(self, "databuilder"):
+            self.databuilder.calc_datastore_hashes()
 
     def parseConfiguration(self):
         self.updateCacheSync()
@@ -681,14 +685,14 @@ class BBCooker:
         bb.event.fire(bb.event.TreeDataPreparationCompleted(len(fulltargetlist)), self.data)
         return taskdata, runlist
 
-    def prepareTreeData(self, pkgs_to_build, task):
+    def prepareTreeData(self, pkgs_to_build, task, halt=False):
         """
         Prepare a runqueue and taskdata object for iteration over pkgs_to_build
         """
 
         # We set halt to False here to prevent unbuildable targets raising
         # an exception when we're just generating data
-        taskdata, runlist = self.buildTaskData(pkgs_to_build, task, False, allowincomplete=True)
+        taskdata, runlist = self.buildTaskData(pkgs_to_build, task, halt, allowincomplete=True)
 
         return runlist, taskdata
 
@@ -702,7 +706,7 @@ class BBCooker:
         if not task.startswith("do_"):
             task = "do_%s" % task
 
-        runlist, taskdata = self.prepareTreeData(pkgs_to_build, task)
+        runlist, taskdata = self.prepareTreeData(pkgs_to_build, task, halt=True)
         rq = bb.runqueue.RunQueue(self, self.data, self.recipecaches, taskdata, runlist)
         rq.rqdata.prepare()
         return self.buildDependTree(rq, taskdata)
@@ -1339,7 +1343,7 @@ class BBCooker:
         self.buildSetVars()
         self.reset_mtime_caches()
 
-        bb_caches = bb.cache.MulticonfigCache(self.databuilder, self.data_hash, self.caches_array)
+        bb_caches = bb.cache.MulticonfigCache(self.databuilder, self.databuilder.data_hash, self.caches_array)
 
         layername = self.collections[mc].calc_bbfile_priority(fn)[2]
         infos = bb_caches[mc].parse(fn, self.collections[mc].get_file_appends(fn), layername)
@@ -1813,8 +1817,8 @@ class CookerCollectFiles(object):
             bb.event.fire(CookerExit(), eventdata)
 
         # We need to track where we look so that we can know when the cache is invalid. There
-        # is no nice way to do this, this is horrid. We intercept the os.listdir()
-        # (or os.scandir() for python 3.6+) calls while we run glob().
+        # is no nice way to do this, this is horrid. We intercept the os.listdir() and os.scandir()
+        # calls while we run glob().
         origlistdir = os.listdir
         if hasattr(os, 'scandir'):
             origscandir = os.scandir
@@ -2112,7 +2116,7 @@ class CookerParser(object):
         self.mcfilelist = mcfilelist
         self.cooker = cooker
         self.cfgdata = cooker.data
-        self.cfghash = cooker.data_hash
+        self.cfghash = cooker.databuilder.data_hash
         self.cfgbuilder = cooker.databuilder
 
         # Accounting statistics
@@ -2224,9 +2228,8 @@ class CookerParser(object):
 
         for process in self.processes:
             process.join()
-            # Added in 3.7, cleans up zombies
-            if hasattr(process, "close"):
-                process.close()
+            # clean up zombies
+            process.close()
 
         bb.codeparser.parser_cache_save()
         bb.codeparser.parser_cache_savemerge()
@@ -2236,12 +2239,13 @@ class CookerParser(object):
             profiles = []
             for i in self.process_names:
                 logfile = "profile-parse-%s.log" % i
-                if os.path.exists(logfile):
+                if os.path.exists(logfile) and os.path.getsize(logfile):
                     profiles.append(logfile)
 
-            pout = "profile-parse.log.processed"
-            bb.utils.process_profilelog(profiles, pout = pout)
-            print("Processed parsing statistics saved to %s" % (pout))
+            if profiles:
+                pout = "profile-parse.log.processed"
+                bb.utils.process_profilelog(profiles, pout = pout)
+                print("Processed parsing statistics saved to %s" % (pout))
 
     def final_cleanup(self):
         if self.syncthread:

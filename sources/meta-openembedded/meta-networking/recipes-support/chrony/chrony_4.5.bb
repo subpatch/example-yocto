@@ -30,7 +30,7 @@ SECTION = "net"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
 
-SRC_URI = "https://chrony-project.org/releases/chrony-${PV}.tar.gz \
+SRC_URI = "https://download.tuxfamily.org/chrony/chrony-${PV}.tar.gz \
     file://chrony.conf \
     file://chronyd \
     file://arm_eabi.patch \
@@ -48,7 +48,7 @@ DEPENDS = "pps-tools"
 inherit update-rc.d systemd pkgconfig
 
 # Add chronyd user if privdrop packageconfig is selected
-inherit_defer ${@bb.utils.contains('PACKAGECONFIG', 'privdrop', 'useradd', '', d)}
+inherit ${@bb.utils.contains('PACKAGECONFIG', 'privdrop', 'useradd', '', d)}
 USERADD_PACKAGES = "${@bb.utils.contains('PACKAGECONFIG', 'privdrop', '${PN}', '', d)}"
 USERADD_PARAM:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'privdrop', '--system -d / -M --shell /bin/nologin chronyd;', '', d)}"
 
@@ -90,7 +90,7 @@ do_install() {
 
     # Config file
     install -d ${D}${sysconfdir}
-    install -m 644 ${WORKDIR}/chrony.conf ${D}${sysconfdir}
+    install -m 644 ${UNPACKDIR}/chrony.conf ${D}${sysconfdir}
     if ${@bb.utils.contains('PACKAGECONFIG', 'privdrop', 'true', 'false', d)}; then
         echo "# Define user to drop to after dropping root privileges" >> ${D}${sysconfdir}/chrony.conf
         echo "user chronyd" >> ${D}${sysconfdir}/chrony.conf
@@ -98,7 +98,7 @@ do_install() {
 
     # System V init script
     install -d ${D}${sysconfdir}/init.d
-    install -m 755 ${WORKDIR}/chronyd ${D}${sysconfdir}/init.d
+    install -m 755 ${UNPACKDIR}/chronyd ${D}${sysconfdir}/init.d
 
     # systemd unit configuration file
     install -d ${D}${systemd_unitdir}/system

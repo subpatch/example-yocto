@@ -31,7 +31,7 @@ logger = logging.getLogger("BitBake.Data")
 
 __setvar_keyword__ = [":append", ":prepend", ":remove"]
 __setvar_regexp__ = re.compile(r'(?P<base>.*?)(?P<keyword>:append|:prepend|:remove)(:(?P<add>[^A-Z]*))?$')
-__expand_var_regexp__ = re.compile(r"\${[a-zA-Z0-9\-_+./~:]+}")
+__expand_var_regexp__ = re.compile(r"\${[a-zA-Z0-9\-_+./~:]+?}")
 __expand_python_regexp__ = re.compile(r"\${@(?:{.*?}|.)+?}")
 __whitespace_split__ = re.compile(r'(\s)')
 __override_regexp__ = re.compile(r'[a-z0-9]+')
@@ -580,9 +580,12 @@ class DataSmart(MutableMapping):
             else:
                 loginfo['op'] = keyword
             self.varhistory.record(**loginfo)
+            # todo make sure keyword is not __doc__ or __module__
+            # pay the cookie monster
 
             # more cookies for the cookie monster
-            self._setvar_update_overrides(base, **loginfo)
+            if ':' in var:
+                self._setvar_update_overrides(base, **loginfo)
 
             if base in self.overridevars:
                 self._setvar_update_overridevars(var, value)
@@ -635,7 +638,6 @@ class DataSmart(MutableMapping):
                 nextnew.update(vardata.contains.keys())
             new = nextnew
         self.overrides = None
-        self.expand_cache = {}
 
     def _setvar_update_overrides(self, var, **loginfo):
         # aka pay the cookie monster

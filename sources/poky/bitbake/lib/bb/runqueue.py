@@ -729,8 +729,6 @@ class RunQueueData:
                 if mc == frommc:
                     fn = taskData[mcdep].build_targets[pn][0]
                     newdep = '%s:%s' % (fn,deptask)
-                    if newdep not in taskData[mcdep].taskentries:
-                        bb.fatal("Task mcdepends on non-existent task %s" % (newdep))
                     taskData[mc].taskentries[tid].tdepends.append(newdep)
 
         for mc in taskData:
@@ -2560,9 +2558,6 @@ class RunQueueExecute:
                     self.rqdata.runtaskentries[hashtid].unihash = unihash
                     bb.parse.siggen.set_unihash(hashtid, unihash)
                     toprocess.add(hashtid)
-                if torehash:
-                    # Need to save after set_unihash above
-                    bb.parse.siggen.save_unitaskhashes()
 
         # Work out all tasks which depend upon these
         total = set()

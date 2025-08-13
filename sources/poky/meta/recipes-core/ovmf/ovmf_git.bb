@@ -24,8 +24,6 @@ SRC_URI = "gitsm://github.com/tianocore/edk2.git;branch=master;protocol=https \
            file://0002-BaseTools-makefile-adjust-to-build-in-under-bitbake.patch \
            file://0003-debug-prefix-map.patch \
            file://0004-reproducible.patch \
-           file://0001-MdePkg-Fix-overflow-issue-in-BasePeCoffLib.patch \
-           file://0001-MdeModulePkg-Potential-UINT32-overflow-in-S3-ResumeC.patch \
            "
 
 PV = "edk2-stable202402"
@@ -57,7 +55,7 @@ DEPENDS = "nasm-native acpica-native ovmf-native util-linux-native"
 EDK_TOOLS_DIR="edk2_basetools"
 
 # OVMF has trouble building with the default optimization of -O2.
-BUILD_OPTIMIZATION="-pipe"
+BUILD_OPTIMIZATION = ""
 
 # OVMF supports IA only, although it could conceivably support ARM someday.
 COMPATIBLE_HOST:class-target='(i.86|x86_64).*'

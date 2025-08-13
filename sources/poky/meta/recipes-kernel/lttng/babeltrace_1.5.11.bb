@@ -96,5 +96,3 @@ do_install_ptest () {
 	sed -i 's:^BTBIN.*:BTBIN=/usr/bin/babeltrace:' ${f}
     done
 }
-
-BBCLASSEXTEND = "nativesdk"

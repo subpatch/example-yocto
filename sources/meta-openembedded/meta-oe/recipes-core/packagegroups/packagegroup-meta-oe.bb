@@ -243,6 +243,7 @@ RDEPENDS:packagegroup-meta-oe-devtools ="\
     cloc \
     icon-slicer \
     cscope \
+    dbd-mariadb \
     dmalloc \
     ${@bb.utils.contains("PACKAGE_CLASSES", "package_rpm", "dnf-plugin-tui", "", d)} \
     doxygen \
@@ -287,7 +288,6 @@ RDEPENDS:packagegroup-meta-oe-devtools ="\
     openocd \
     pax-utils \
     ipc-run \
-    libdbd-mysql-perl \
     libdbi-perl \
     libdev-checklib-perl \
     libio-pty-perl \
@@ -353,7 +353,6 @@ RDEPENDS:packagegroup-meta-oe-extended ="\
     figlet \
     libcec \
     libdivecomputer \
-    fluentbit \
     ${@bb.utils.contains("DISTRO_FEATURES", "x11", "libgxim", "", d)} \
     liblognorm \
     libmodbus \
@@ -607,12 +606,13 @@ RDEPENDS:packagegroup-meta-oe-graphics ="\
     ${@bb.utils.contains("DISTRO_FEATURES", "x11 pam", "tigervnc", "", d)} \
     tslib \
     unclutter-xfixes \
-    libvdpau \
+    ${@bb.utils.contains("DISTRO_FEATURES", "x11", "libvdpau vdpauinfo", "", d)} \
     xcursorgen \
     ${@bb.utils.contains("DISTRO_FEATURES", "x11 pam", "xscreensaver", "", d)} \
     yad \
     ydotool \
     parallel-deqp-runner \
+    deqp-runner \
     ${@bb.utils.contains("DISTRO_FEATURES", "opengl", "opengl-es-cts", "", d)} \
     ${@bb.utils.contains("DISTRO_FEATURES", "opengl vulkan", "vulkan-cts", "", d)} \
 "
@@ -688,7 +688,6 @@ RDEPENDS:packagegroup-meta-oe-multimedia ="\
 RDEPENDS:packagegroup-meta-oe-navigation ="\
     geos \
     ${@bb.utils.contains("DISTRO_FEATURES", "bluz4", "gpsd-machine-conf gpsd", "", d)} \
-    ${@bb.utils.contains("DISTRO_FEATURES", "x11", "orrery", "", d)} \
     geoclue \
     libspatialite \
     proj \
@@ -743,7 +742,6 @@ RDEPENDS:packagegroup-meta-oe-support ="\
     exiv2 \
     libnice \
     c-periphery \
-    fmt \
     function2 \
     gd \
     gflags \
@@ -813,13 +811,11 @@ RDEPENDS:packagegroup-meta-oe-support ="\
     libcanberra \
     libssh \
     libssh2 \
-    libee \
     libusbgx-config \
     libusbgx \
     lockdev \
     logwarn \
     libjs-sizzle \
-    liblinebreak \
     mailcap \
     liboauth \
     mg \
@@ -974,7 +970,6 @@ RDEPENDS:packagegroup-meta-oe-ptest-packages = "\
     oprofile-ptest \
     libteam-ptest \
     uthash-ptest \
-    libee-ptest \
     poco-ptest \
     cmocka-ptest \
     minicoredumper-ptest \

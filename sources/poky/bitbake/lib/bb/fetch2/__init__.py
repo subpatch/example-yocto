@@ -237,7 +237,7 @@ class URI(object):
         # to RFC compliant URL format. E.g.:
         #   file://foo.diff -> file:foo.diff
         if urlp.scheme in self._netloc_forbidden:
-            uri = re.sub(r"(?<=:)//(?!/)", "", uri, count=1)
+            uri = re.sub("(?<=:)//(?!/)", "", uri, 1)
             reparse = 1
 
         if reparse:
@@ -1317,7 +1317,7 @@ class FetchData(object):
 
             if checksum_name in self.parm:
                 checksum_expected = self.parm[checksum_name]
-            elif self.type not in ["http", "https", "ftp", "ftps", "sftp", "s3", "az", "crate", "gs"]:
+            elif self.type not in ["http", "https", "ftp", "ftps", "sftp", "s3", "az", "crate", "gs", "gomod"]:
                 checksum_expected = None
             else:
                 checksum_expected = d.getVarFlag("SRC_URI", checksum_name)
@@ -1606,7 +1606,7 @@ class FetchMethod(object):
                     if urlpath.find("/") != -1:
                         destdir = urlpath.rsplit("/", 1)[0] + '/'
                         bb.utils.mkdirhier("%s/%s" % (unpackdir, destdir))
-                cmd = 'cp -fpPRH "%s" "%s"' % (file, destdir)
+                cmd = 'cp --force --preserve=timestamps --no-dereference --recursive -H "%s" "%s"' % (file, destdir)
         else:
             urldata.unpack_tracer.unpack("archive-extract", unpackdir)
 
@@ -2088,6 +2088,7 @@ from . import npmsw
 from . import az
 from . import crate
 from . import gcp
+from . import gomod
 
 methods.append(local.Local())
 methods.append(wget.Wget())
@@ -2110,3 +2111,5 @@ methods.append(npmsw.NpmShrinkWrap())
 methods.append(az.Az())
 methods.append(crate.Crate())
 methods.append(gcp.GCP())
+methods.append(gomod.GoMod())
+methods.append(gomod.GoModGit())

@@ -20,14 +20,18 @@ inherit autotools-brokensep pkgconfig gettext qemu
 
 SRC_URI = "https://gitlab.com/api/v4/projects/4207231/packages/generic/${BPN}-releases/${PV}/${BP}.tar.xz \
            file://0001-Autotools-fix-do-not-put-prefix-based-paths-in-compi.patch \
-           file://CVE-2023-46045-0001.patch \
-           file://CVE-2023-46045-0002.patch \
-           file://CVE-2023-46045-0003.patch \
            "
+# Use native mkdefs
+SRC_URI:append:class-target = "\
+           file://0001-Set-use_tcl-to-be-empty-string-if-tcl-is-disabled.patch \
+"
 SRC_URI:append:class-nativesdk = "\
            file://graphviz-setup.sh \
 "
 SRC_URI[sha256sum] = "d593695fdaa8a19297523b679ad13d3ef2027b0b7f14cc2bc23e77969ed81565"
+
+UPSTREAM_CHECK_URI = "https://graphviz.org/download/"
+UPSTREAM_CHECK_REGEX = "(?P<pver>\d+(\.\d+)+)"
 
 PACKAGECONFIG ??= "librsvg"
 PACKAGECONFIG[librsvg] = "--with-librsvg,--without-librsvg,librsvg"
@@ -66,7 +70,7 @@ do_configure:prepend() {
 do_install:append:class-nativesdk() {
     # graphviz-setup.sh must be executed at SDK installation
     install -d ${D}${SDKPATHNATIVE}/post-relocate-setup.d
-    install -m 0755 ${WORKDIR}/graphviz-setup.sh ${D}${SDKPATHNATIVE}/post-relocate-setup.d
+    install -m 0755 ${UNPACKDIR}/graphviz-setup.sh ${D}${SDKPATHNATIVE}/post-relocate-setup.d
 }
 FILES:${PN}:class-nativesdk += "${SDKPATHNATIVE}"
 

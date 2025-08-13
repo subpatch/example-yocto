@@ -34,9 +34,11 @@ EXTRA_OECONF += "\
 EXTRA_OECONF:append:libc-baremetal = " --without-headers"
 EXTRA_OECONF:remove:libc-baremetal = "--enable-threads=posix"
 EXTRA_OECONF:remove:libc-newlib = "--enable-threads=posix"
+EXTRA_OECONF:remove:libc-picolibc = "--enable-threads=posix"
 
 EXTRA_OECONF_PATHS = "\
     --with-gxx-include-dir=/not/exist${target_includedir}/c++/${BINV} \
+    --with-gxx-libcxx-include-dir=/not/exist${target_includedir}/c++/v1 \
     --with-sysroot=/not/exist \
     --with-build-sysroot=${STAGING_DIR_TARGET} \
 "
