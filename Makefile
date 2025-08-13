@@ -46,3 +46,10 @@ update:
 	$(SUBPATCH) update sources/poky
 	$(SUBPATCH) update sources/meta-openembedded
 	$(SUBPATCH) update sources/meta-raspberrypi
+
+
+.PHONY: upgrade
+upgrade:
+	$(SUBPATCH) update -r styhead sources/poky
+	$(SUBPATCH) update -r styhead sources/meta-openembedded
+	$(SUBPATCH) update -r styhead sources/meta-raspberrypi
